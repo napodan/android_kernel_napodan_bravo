@@ -788,6 +788,8 @@ static void __vmx_load_host_state(struct vcpu_vmx *vmx)
 
 	++vmx->vcpu.stat.host_state_reload;
 	vmx->host_state.loaded = 0;
+	if (vmx->host_state.fs_reload_needed)
+		kvm_load_fs(vmx->host_state.fs_sel);
 #ifdef CONFIG_X86_64
 	if (is_long_mode(&vmx->vcpu))
 		rdmsrl(MSR_KERNEL_GS_BASE, vmx->msr_guest_kernel_gs_base);
@@ -800,8 +802,6 @@ static void __vmx_load_host_state(struct vcpu_vmx *vmx)
 		loadsegment(gs, vmx->host_state.gs_sel);
 #endif
 	}
-	if (vmx->host_state.fs_reload_needed)
-		loadsegment(fs, vmx->host_state.fs_sel);
 	reload_tss();
 #ifdef CONFIG_X86_64
 	wrmsrl(MSR_KERNEL_GS_BASE, vmx->msr_host_kernel_gs_base);

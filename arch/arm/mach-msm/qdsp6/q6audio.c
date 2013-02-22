@@ -309,12 +309,12 @@ static void audio_client_free(struct audio_client *ac)
 	session_free(ac->session, ac);
 
 	if (ac->buf[0].data) {
-		iounmap(ac->buf[0].data);
-		pmem_kfree(ac->buf[0].phys);
+		dma_free_coherent(NULL, ac->buf[0].size,
+				  ac->buf[0].data, ac->buf[0].phys);
 	}
 	if (ac->buf[1].data) {
-		iounmap(ac->buf[1].data);
-		pmem_kfree(ac->buf[1].phys);
+		dma_free_coherent(NULL, ac->buf[1].size,
+				  ac->buf[1].data, ac->buf[1].phys);
 	}
 	kfree(ac);
 }
@@ -335,14 +335,12 @@ static struct audio_client *audio_client_alloc(unsigned bufsz)
 	ac->session = n;
 
 	if (bufsz > 0) {
-		ac->buf[0].phys = pmem_kalloc(bufsz,
-					PMEM_MEMTYPE_EBI1|PMEM_ALIGNMENT_4K);
-		ac->buf[0].data = ioremap(ac->buf[0].phys, bufsz);
+		ac->buf[0].data = dma_alloc_coherent(NULL, bufsz,
+						&ac->buf[0].phys, GFP_KERNEL);
 		if (!ac->buf[0].data)
 			goto fail;
-		ac->buf[1].phys = pmem_kalloc(bufsz,
-					PMEM_MEMTYPE_EBI1|PMEM_ALIGNMENT_4K);
-		ac->buf[1].data = ioremap(ac->buf[1].phys, bufsz);
+		ac->buf[1].data = dma_alloc_coherent(NULL, bufsz,
+						&ac->buf[1].phys, GFP_KERNEL);
 		if (!ac->buf[1].data)
 			goto fail;
 
@@ -906,8 +904,7 @@ static int q6audio_init(void)
 	icodec_tx_clk = clk_get(0, "icodec_tx_clk");
 	ecodec_clk = clk_get(0, "ecodec_clk");
 	sdac_clk = clk_get(0, "sdac_clk");
-	audio_phys = pmem_kalloc(4096, PMEM_MEMTYPE_EBI1|PMEM_ALIGNMENT_4K);
-	audio_data = ioremap(audio_phys, 4096);
+	audio_data = dma_alloc_coherent(NULL, 4096, &audio_phys, GFP_KERNEL);
 
 	pr_info("[%s:%s] attach ADSP\n", __MM_FILE__, __func__);
 	adsp = dal_attach(AUDIO_DAL_DEVICE, AUDIO_DAL_PORT, 1,

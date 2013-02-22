@@ -298,8 +298,8 @@ static void adreno_iommu_setstate(struct kgsl_device *device,
 					uint32_t flags)
 {
 	unsigned int pt_val, reg_pt_val;
-	unsigned int link[250];
-	unsigned int *cmds = &link[0];
+  unsigned int *link=0;
+	unsigned int *cmds = 0;
 	int sizedwords = 0;
 	struct adreno_device *adreno_dev = ADRENO_DEVICE(device);
 	int num_iommu_units, i;
@@ -319,6 +319,11 @@ static void adreno_iommu_setstate(struct kgsl_device *device,
 				KGSL_IOMMU_CONTEXT_USER))
 		return;
 
+  link = kmalloc(sizeof(*link) * 250, GFP_KERNEL);
+  if (!link)
+    return;
+
+	cmds = &link[0];
 	cmds += __adreno_add_idle_indirect_cmds(cmds,
 		device->mmu.setstate_memory.gpuaddr +
 		KGSL_IOMMU_SETSTATE_NOP_OFFSET);
@@ -431,10 +436,11 @@ static void adreno_iommu_setstate(struct kgsl_device *device,
 		adreno_dev->ringbuffer.timestamp[KGSL_MEMSTORE_GLOBAL], true);
 	}
 
-	if (sizedwords > (ARRAY_SIZE(link))) {
+	if (sizedwords > 250 ) {
 		KGSL_DRV_ERR(device, "Temp command buffer overflow\n");
 		BUG();
 	}
+  kfree(link);
 }
 
 static void adreno_gpummu_setstate(struct kgsl_device *device,

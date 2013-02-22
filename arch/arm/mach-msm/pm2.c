@@ -479,6 +479,14 @@ static void msm_pm_config_hw_before_power_down(void)
 	mb();
 }
 
+#if defined(CONFIG_ARCH_MSM8960) || defined(CONFIG_ARCH_APQ8064) || \
+	defined(CONFIG_ARCH_MSM8930) || defined(CONFIG_ARCH_MSM9615) || \
+	defined(CONFIG_ARCH_MSM8974) || defined(CONFIG_ARCH_MSM7X27) || \
+	defined(CONFIG_ARCH_MSM7X25) || defined(CONFIG_ARCH_MSM7X01A) || \
+	defined(CONFIG_ARCH_MSM8625) || defined(CONFIG_ARCH_MSM7X30) || \
+	defined(CONFIG_ARCH_MSM9625) || defined(CONFIG_ARCH_MPQ8092) || \
+	defined(CONFIG_ARCH_MSM8226) || defined(CONFIG_ARCH_MSM8610)
+
 /*
  * Program the top csr from core0 context to put the
  * core1 into GDFS, as core1 is not running yet.
@@ -584,6 +592,7 @@ static void msm_pm_config_hw_after_power_up(void)
 		mb();
 	}
 }
+#endif
 
 /*
  * Configure hardware registers in preparation for SWFI.
@@ -864,7 +873,9 @@ static int msm_pm_power_collapse
 	unsigned long saved_acpuclk_rate;
 	int collapsed = 0;
 	int ret;
+#ifdef CONFIG_ARCH_MSM8625
 	int val;
+#endif
 	int modem_early_exit = 0;
 
 	MSM_PM_DPRINTK(MSM_PM_DEBUG_SUSPEND|MSM_PM_DEBUG_POWER_COLLAPSE,
@@ -980,6 +991,7 @@ static int msm_pm_power_collapse
 
 	collapsed = msm_pm_collapse();
 
+#ifdef CONFIG_ARCH_MSM8625
 	/*
 	 * TBD: Currently recognise the MODEM early exit
 	 * path by reading the MPA5_GDFS_CNT_VAL register.
@@ -1030,6 +1042,7 @@ static int msm_pm_power_collapse
 				modem_early_exit = 1;
 		}
 	}
+#endif
 
 #ifdef CONFIG_CACHE_L2X0
 	if (!cpu_is_msm8625() && !cpu_is_msm8625q())
@@ -1057,7 +1070,15 @@ static int msm_pm_power_collapse
 		msm_pm_smem_data->wakeup_reason,
 		msm_pm_smem_data->pending_irqs);
 
+#if defined(CONFIG_ARCH_MSM8960) || defined(CONFIG_ARCH_APQ8064) || \
+	defined(CONFIG_ARCH_MSM8930) || defined(CONFIG_ARCH_MSM9615) || \
+	defined(CONFIG_ARCH_MSM8974) || defined(CONFIG_ARCH_MSM7X27) || \
+	defined(CONFIG_ARCH_MSM7X25) || defined(CONFIG_ARCH_MSM7X01A) || \
+	defined(CONFIG_ARCH_MSM8625) || defined(CONFIG_ARCH_MSM7X30) || \
+	defined(CONFIG_ARCH_MSM9625) || defined(CONFIG_ARCH_MPQ8092) || \
+	defined(CONFIG_ARCH_MSM8226) || defined(CONFIG_ARCH_MSM8610)
 	msm_pm_config_hw_after_power_up();
+#endif
 	MSM_PM_DEBUG_PRINT_STATE("msm_pm_power_collapse(): post power up");
 
 	memset(state_grps, 0, sizeof(state_grps));
@@ -1647,7 +1668,9 @@ void msm_pm_cpu_enter_lowpower(unsigned int cpu)
 static int __init msm_pm_init(void)
 {
 	int ret;
+#ifdef CONFIG_ARCH_MSM8625
 	int val;
+#endif
 	enum msm_pm_time_stats_id enable_stats[] = {
 		MSM_PM_STAT_REQUESTED_IDLE,
 		MSM_PM_STAT_IDLE_SPIN,
@@ -1722,6 +1745,7 @@ static int __init msm_pm_init(void)
 		return ret;
 	}
 
+#ifdef CONFIG_ARCH_MSM8625
 	if (cpu_is_msm8625() || cpu_is_msm8625q()) {
 		target_type = TARGET_IS_8625;
 		clean_caches((unsigned long)&target_type, sizeof(target_type),
@@ -1743,6 +1767,7 @@ static int __init msm_pm_init(void)
 
 		l2x0_base_addr = MSM_L2CC_BASE;
 	}
+#endif
 
 #ifdef CONFIG_MSM_MEMORY_LOW_POWER_MODE
 	/* The wakeup_reason field is overloaded during initialization time

@@ -10,6 +10,7 @@
 
 #include <asm-generic/dma-coherent.h>
 #include <asm/memory.h>
+#include <asm/cacheflush.h>
 
 #define DMA_ERROR_CODE	(~0)
 extern struct dma_map_ops arm_dma_ops;
@@ -375,13 +376,11 @@ extern void dmabounce_unregister_dev(struct device *);
 static inline void dma_cache_pre_ops(void *virtual_addr,
 		size_t size, enum dma_data_direction dir)
 {
-	extern void ___dma_single_cpu_to_dev(const void *, size_t,
-		enum dma_data_direction);
 
 	BUG_ON(!valid_dma_direction(dir));
 
 	if (!arch_is_coherent())
-		___dma_single_cpu_to_dev(virtual_addr, size, dir);
+		dmac_map_area(virtual_addr, size, dir);
 }
 
 /**
@@ -398,8 +397,6 @@ static inline void dma_cache_pre_ops(void *virtual_addr,
 static inline void dma_cache_post_ops(void *virtual_addr,
 		size_t size, enum dma_data_direction dir)
 {
-	extern void ___dma_single_cpu_to_dev(const void *, size_t,
-		enum dma_data_direction);
 
 	BUG_ON(!valid_dma_direction(dir));
 
@@ -409,7 +406,7 @@ static inline void dma_cache_post_ops(void *virtual_addr,
 		 * Treat DMA_BIDIRECTIONAL and DMA_FROM_DEVICE
 		 * identically: invalidate
 		 */
-		___dma_single_cpu_to_dev(virtual_addr,
+		dmac_map_area(virtual_addr,
 					 size, DMA_FROM_DEVICE);
 }
 /*
